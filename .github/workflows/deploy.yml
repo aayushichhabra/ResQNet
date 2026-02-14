@@ -19,8 +19,7 @@ jobs:
         with:
           node-version: 18
 
-      # --- THE FIX IS HERE ---
-      # We added --legacy-peer-deps to ignore the React 19 vs 18 conflict
+      # FIX 1: Use legacy peer deps to solve React 19 vs 18 conflicts
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
@@ -37,6 +36,10 @@ jobs:
 
       - name: Build Website
         run: npx expo export --platform web
+
+      # FIX 2: Create .nojekyll to allow files starting with "_" (like _expo)
+      - name: Add .nojekyll file
+        run: touch dist/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
