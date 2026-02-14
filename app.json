@@ -22,9 +22,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       [
         "expo-splash-screen",
