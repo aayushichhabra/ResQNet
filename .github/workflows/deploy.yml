@@ -19,11 +19,11 @@ jobs:
         with:
           node-version: 18
 
+      # --- THE FIX IS HERE ---
+      # We added --legacy-peer-deps to ignore the React 19 vs 18 conflict
       - name: Install Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
-      # THIS IS THE MAGIC STEP
-      # It takes GitHub Secrets and creates a .env file on the fly
       - name: Generate .env file
         run: |
           echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env
