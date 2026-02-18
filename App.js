@@ -1,27 +1,41 @@
+<<<<<<< HEAD
+import { useState } from "react";
+import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+=======
 import React, { useState, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Alert, TouchableOpacity, Text } from 'react-native';
 import * as QuickActions from 'expo-quick-actions';
-import { useQuickActionRouting } from 'expo-quick-actions/router';
 import * as Location from 'expo-location';
 import { supabase } from './src/services/supabaseConfig';
 import { auth } from './src/services/firebaseConfig';
+>>>>>>> d110751c96ac894a062f9280d13d242bf387ccdf
 
 // Screen Imports
-import OnboardingScreen from './src/screens/OnboardingScreen';
-import LoginScreen from './src/screens/auth/LoginScreen';
-import HomeScreen from './src/screens/dashboard/HomeScreen';
-import MapScreen from './src/screens/dashboard/MapScreen';
-import ReportScreen from './src/screens/dashboard/ReportScreen';
-import ProfileScreen from './src/screens/dashboard/ProfileScreen';
-import ManualScreen from './src/screens/dashboard/ManualScreen'; 
-import { BottomTab } from './src/navigation/BottomTab';
+import { BottomTab } from "./src/navigation/BottomTab";
+import OnboardingScreen from "./src/screens/OnboardingScreen";
+import LoginScreen from "./src/screens/auth/LoginScreen";
+import HomeScreen from "./src/screens/dashboard/HomeScreen";
+import MapScreen from "./src/screens/dashboard/MapScreen";
+import ProfileScreen from "./src/screens/dashboard/ProfileScreen";
+import ReportScreen from "./src/screens/dashboard/ReportScreen";
 
 export default function App() {
+<<<<<<< HEAD
+  const [screen, setScreen] = useState("onboarding"); // 'onboarding', 'login', 'app'
+  const [activeTab, setActiveTab] = useState("home");
+
+  const renderContent = () => {
+    if (screen === "onboarding")
+      return <OnboardingScreen onFinish={() => setScreen("login")} />;
+    if (screen === "login")
+      return <LoginScreen onLogin={() => setScreen("app")} />;
+=======
   const [screen, setScreen] = useState('onboarding');
   const [activeTab, setActiveTab] = useState('home');
 
-  // --- 1. REGISTER SHORTCUT ---
+  // --- 1️⃣ REGISTER SHORTCUT ---
   useEffect(() => {
     QuickActions.setItems([
       {
@@ -33,30 +47,31 @@ export default function App() {
     ]);
   }, []);
 
-  // --- 2. HANDLE SHORTCUT ---
-  const activeAction = useQuickActionRouting();
-
+  // --- 2️⃣ HANDLE SHORTCUT (CLASSIC MODE - NO ROUTER) ---
   useEffect(() => {
-    if (activeAction?.id === 'sos_trigger') {
-      handleQuickSOS();
-    }
-  }, [activeAction]);
+    const subscription = QuickActions.addListener((action) => {
+      if (action?.id === 'sos_trigger') {
+        handleQuickSOS();
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const handleQuickSOS = async () => {
     console.log("Quick Action Logic Triggered!");
-    
-    // For demo purposes, we allow SOS even if not logged in
-    // This simulates the real Quick Action behavior where the OS handles the trigger
+
     const userEmail = auth.currentUser?.email || 'UNREGISTERED_SOS_USER';
 
     try {
       Alert.alert("🚀 Triggering SOS...", "Fetching location in background...");
-      
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert("Error", "Permission denied");
         return;
       }
+
       let loc = await Location.getCurrentPositionAsync({});
 
       const { error } = await supabase.from('reports').insert({
@@ -68,11 +83,14 @@ export default function App() {
       });
 
       if (!error) {
-        Alert.alert("🚨 SOS SENT", "Emergency beacon broadcasted successfully to Rescue Teams.");
-        // If logged in, navigate to dashboard to show confirmation
+        Alert.alert(
+          "🚨 SOS SENT",
+          "Emergency beacon broadcasted successfully to Rescue Teams."
+        );
+
         if (auth.currentUser) {
-            setScreen('app'); 
-            setActiveTab('home');
+          setScreen('app');
+          setActiveTab('home');
         }
       }
     } catch (e) {
@@ -81,18 +99,39 @@ export default function App() {
   };
 
   const renderContent = () => {
-    if (screen === 'onboarding') return <OnboardingScreen onFinish={() => setScreen('login')} />;
-    if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')} />;
+    if (screen === 'onboarding')
+      return <OnboardingScreen onFinish={() => setScreen('login')} />;
 
+    if (screen === 'login')
+      return <LoginScreen onLogin={() => setScreen('app')} />;
+>>>>>>> d110751c96ac894a062f9280d13d242bf387ccdf
+
+    // Dashboard Logic
     return (
+<<<<<<< HEAD
+      <View className="flex-1">
+        <View className="flex-1">
+          {activeTab === "home" && <HomeScreen onNavigate={() => {}} />}
+          {activeTab === "map" && <MapScreen />}
+          {activeTab === "manual" && <ManualScreen />}
+          {activeTab === "report" && <ReportScreen />}
+          {activeTab === "profile" && (
+            <ProfileScreen onLogout={() => setScreen("login")} />
+=======
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1 }}>
-          {activeTab === 'home' && <HomeScreen onNavigate={(tab) => setActiveTab(tab)} />}
+          {activeTab === 'home' && (
+            <HomeScreen onNavigate={(tab) => setActiveTab(tab)} />
+          )}
           {activeTab === 'map' && <MapScreen />}
           {activeTab === 'manual' && <ManualScreen />}
           {activeTab === 'report' && <ReportScreen />}
-          {activeTab === 'profile' && <ProfileScreen onLogout={() => setScreen('login')} />}
+          {activeTab === 'profile' && (
+            <ProfileScreen onLogout={() => setScreen('login')} />
+>>>>>>> d110751c96ac894a062f9280d13d242bf387ccdf
+          )}
         </View>
+
         <BottomTab active={activeTab} onChange={setActiveTab} />
       </View>
     );
@@ -100,34 +139,39 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: 'white', position: 'relative' }}>
+      <View className="flex-1 bg-white">
         {renderContent()}
 
+<<<<<<< HEAD
         {/* --- VISIBLE PANIC BUTTON (Available on Login Screen) --- */}
+        {screen === "login" && (
+=======
+        {/* 🚨 Visible Panic Button on Login Screen */}
         {screen === 'login' && (
-          <TouchableOpacity 
+>>>>>>> d110751c96ac894a062f9280d13d242bf387ccdf
+          <TouchableOpacity
             onPress={handleQuickSOS}
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 60,
               right: 20,
-              backgroundColor: '#ef4444',
+              backgroundColor: "#ef4444",
               paddingVertical: 12,
               paddingHorizontal: 16,
               borderRadius: 50,
               zIndex: 999,
-              shadowColor: '#000',
+              shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
               shadowRadius: 3.84,
               elevation: 5,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
             }}
           >
             <Text style={{ fontSize: 16 }}>🚨</Text>
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 14 }}>
               EMERGENCY SOS
             </Text>
           </TouchableOpacity>

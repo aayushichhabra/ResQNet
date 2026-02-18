@@ -22,11 +22,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
+    "experiments": {
+      "baseUrl": "/ResQNet/"
+    },
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -39,10 +41,6 @@
           }
         }
       ]
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+    ]
   }
 }

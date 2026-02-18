@@ -2,9 +2,9 @@
   "name": "resqnet",
   "main": "expo/AppEntry.js",
   "version": "1.0.0",
+  "homepage": "https://aayushichhabra.github.io/ResQNet",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -28,7 +28,6 @@
     "expo-linking": "~8.0.9",
     "expo-location": "~19.0.7",
     "expo-quick-actions": "^6.0.0",
-    "expo-router": "~6.0.15",
     "expo-splash-screen": "~31.0.11",
     "expo-status-bar": "~3.0.8",
     "expo-symbols": "~1.0.7",
