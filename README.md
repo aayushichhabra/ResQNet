@@ -1,50 +1,158 @@
-# Welcome to your Expo app 👋
+# 🚨 ResQNet – Offline-First Disaster Response Platform
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **Turning Logistical Paralysis into Proactive Rescue**
 
-## Get started
+ResQNet is an **offline-first disaster response coordination platform** designed to eliminate rescue delays during emergencies. By connecting citizens, NGOs, and government authorities on a unified ecosystem, ResQNet ensures faster, more efficient, and data-driven disaster response—even during total communication blackouts.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🛑 The Challenge
 
-2. Start the app
+During critical emergencies (floods, earthquakes, cyclones), the **Golden Hour (first 60 minutes)** is vital for saving lives. However, rescue operations are frequently delayed due to structural breakdowns:
+- Cellular network and internet collapse.
+- Power grid failures.
+- Lack of real-time, last-mile victim tracking.
 
-   ```bash
-   npx expo start
-   ```
+Existing systems heavily rely on stable internet connections and primarily focus on one-way alerts. When the infrastructure fails, victims enter a "blackout phase" and become digitally invisible. Between 2014 and 2024, India lost over ₹4.3 trillion due to disasters, highlighting the urgent need for a resilient coordination system.
 
-In the output, you'll find options to open the app in a
+## 💡 The Solution
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+ResQNet bridges the communication gap by enabling offline SOS reporting, bilateral communication, and real-time incident visibility. We ensure that **a disaster victim never becomes digitally invisible.** The ecosystem operates across three interconnected layers:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+1. **📱 Citizen App:** Enables victims to report emergencies and share coordinates, storing data locally during blackouts and transmitting the moment connectivity returns.
+2. **🏥 NGO Dashboard:** Acts as a decision center for rescue teams, utilizing live SOS monitoring, interactive geospatial maps, and victim clustering to prioritize deployments.
+3. **🏛️ Government Dashboard:** Allows authorities to monitor high-level disaster trends, track affected populations, and optimize emergency resource allocation.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## ⚙️ Core Architecture
 
-```bash
-npm run reset-project
-```
+    📱 Citizen App (React Native / Expo)
+            │
+            ▼
+    🌐 Backend API (Node.js + Express + Socket.IO)
+            │
+            ▼
+    🗄️ Cloud Database (Supabase / PostgreSQL)
+            │
+            ▼
+    💻 Dashboards (React + Vite + Leaflet Maps)
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ✨ Key Features
 
-To learn more about developing your project with Expo, look at the following resources:
+### Citizen Mobile Application
+- **One-Tap SOS:** Instant distress signaling with automatic GPS location capture.
+- **Offline-First Capabilities:** Data is stored locally during network outages and synced automatically when a connection is established.
+- **Incident Categorization:** Specify the emergency type (e.g., flood, fire, landslide) for appropriate resource allocation.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### NGO Rescue Dashboard
+- **Live Visualization:** Real-time distress signals mapped via OpenStreetMap and React Leaflet.
+- **Incident Clustering:** Groups nearby SOS signals to identify high-danger zones and prioritize rescue operations.
+- **Resource Prediction:** AI-assisted recommendations for deploying ambulances, boats, or fire units.
 
-## Join the community
+### Government Monitoring Dashboard
+- **Strategic Overview:** Live analytics on disaster trends and affected regions.
+- **Alert Broadcasting:** Push emergency advisories directly to the Citizen App.
+- **Resource Management:** Monitor and allocate high-level rescue resources efficiently.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🛠️ Technology Stack
+
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend (Dashboards)** | React, Vite, React Leaflet, OpenStreetMap |
+| **Frontend (Mobile)** | React Native, Expo |
+| **Backend** | Node.js, Express.js, Socket.IO (Real-time updates) |
+| **Database** | PostgreSQL, Supabase |
+| **Tools & Control** | Git, GitHub, npm |
+
+---
+
+## 🚀 Getting Started
+
+Follow these instructions to get a copy of the project up and running on your local machine.
+
+### 1. Clone the Repository
+    git clone https://github.com/YOUR_USERNAME/ResQNet.git
+    cd ResQNet
+
+### 2. Backend Setup
+    cd resqnet-backend
+    npm install
+    node index.js
+
+* The backend will run at: `http://localhost:5001`
+* Test the database connection at: `http://localhost:5001/test-db`
+
+### 3. NGO Dashboard Setup
+    cd ../resqnet-ngo-dashboard
+    npm install
+    npm run dev
+
+* Open your browser and navigate to: `http://localhost:5173`
+
+### 4. Citizen App Setup
+    cd ../citizen-app
+    npm install
+    npx expo start
+
+* Run the app using the **Expo Go** mobile app, an Android Emulator, or an iOS Simulator.
+
+*(Note: You will need to configure your `.env` files with your Supabase credentials before running the application.)*
+
+---
+
+## 🗃️ Database Schema (Core)
+
+**Table:** `reports`
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | UUID | Unique identifier for the report |
+| `type` | String | Category of the disaster (e.g., Flood, Fire) |
+| `latitude` | Float | Victim's geographic latitude |
+| `longitude` | Float | Victim's geographic longitude |
+| `details` | Text | Description of the incident/need |
+| `user_email` | String | Contact information of the reporter |
+| `evidence_url` | String | Link to uploaded media/photos |
+| `created_at` | Timestamp | Time the report was generated |
+
+---
+
+## 📈 Status & Roadmap
+
+**Current Achievements:**
+- [x] Citizen mobile application built and tested.
+- [x] NGO operational dashboard completed.
+- [x] Government monitoring dashboard completed.
+
+**Next Steps:**
+- [ ] Implement real-time deployment with a live disaster simulation.
+
+---
+
+## 👥 Meet the Team
+
+Developed collaboratively by:
+* Aayushi Chhabra
+* Ashi Bansal   
+* Smarya Narang  
+* Rhea Ahuja
+* Navya Khanna   
+* Priyal Kansal  
+
+---
+
+## 📚 References
+
+* [NCRB – Accidental Deaths & Suicides in India (ADSI Report 2022)](https://ncrb.gov.in/)
+* [UN Office for Disaster Risk Reduction (UNDRR)](https://www.undrr.org/)
+* [NDMA / NDEM Disaster Response Systems](https://ndma.gov.in/)
+* OpenStreetMap & PostGIS Documentation
+
+---
+
+*This project was developed as part of a Capstone / Project-Based Learning (PBL) academic curriculum.*
