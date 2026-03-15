@@ -105,23 +105,6 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ---
 
-## 🗃️ Database Schema (Core)
-
-**Table:** `reports`
-
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID | Unique identifier for the report |
-| `type` | String | Category of the disaster (e.g., Flood, Fire) |
-| `latitude` | Float | Victim's geographic latitude |
-| `longitude` | Float | Victim's geographic longitude |
-| `details` | Text | Description of the incident/need |
-| `user_email` | String | Contact information of the reporter |
-| `evidence_url` | String | Link to uploaded media/photos |
-| `created_at` | Timestamp | Time the report was generated |
-
----
-
 ## 📈 Status & Roadmap
 
 **Current Achievements:**
