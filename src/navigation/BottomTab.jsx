@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
-import { Home, MapPin, Camera, User, BookOpen } from 'lucide-react-native';
+import { Home, MapPin, Camera, User, BookOpen, Radio } from 'lucide-react-native';
 
 export const BottomTab = ({ active, onChange }) => {
   const tabs = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'map', icon: MapPin, label: 'Map' },
-    { id: 'manual', icon: BookOpen, label: 'Manual' }, // <--- New Tab
+    { id: 'manual', icon: BookOpen, label: 'Manual' },
+    { id: 'mesh', icon: Radio, label: 'Mesh' },
     { id: 'report', icon: Camera, label: 'Report' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];

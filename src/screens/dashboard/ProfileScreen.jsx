@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert, TextInput, ActivityIndicator, Moda
 import { Header } from '../../components/UIComponents';
 import { LogOut, ChevronRight, User, Bell, Save, X, AlertTriangle, Clock } from 'lucide-react-native';
 import { getAuth, updateProfile } from 'firebase/auth';
-import { supabase } from '../../services/supabaseConfig'; 
+import { supabase } from '../../services/supabaseConfig.js'; 
 import HistoryScreen from './HistoryScreen.jsx';
 
 export default function ProfileScreen({ onLogout }) {
@@ -43,10 +43,13 @@ export default function ProfileScreen({ onLogout }) {
     setLoadingNotifs(true);
     setShowNotifications(true);
     try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('alerts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .gte('created_at', sevenDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       if (error) throw error;
       setNotifications(data || []);

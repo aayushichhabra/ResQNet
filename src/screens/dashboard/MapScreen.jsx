@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -21,22 +21,34 @@ export default function MapScreen() {
   
   const netInfo = useNetInfo();
   const isOffline = netInfo.isConnected === false;
+  const wasOfflineRef = useRef(false);
+  const locationRef = useRef(null);
 
+  // Fetch location once on mount
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
 
       let loc = await Location.getCurrentPositionAsync({});
-      setLocation({
+      const region = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
-      });
-
+      };
+      setLocation(region);
+      locationRef.current = region;
       loadShelterData();
     })();
+  }, []);
+
+  // Refetch shelters only on offline → online transition
+  useEffect(() => {
+    if (netInfo.isConnected && wasOfflineRef.current) {
+      loadShelterData();
+    }
+    wasOfflineRef.current = !netInfo.isConnected;
   }, [netInfo.isConnected]);
 
   const loadShelterData = async () => {
@@ -124,18 +136,54 @@ export default function MapScreen() {
     try {
       // 1. Save Shelters
       const { data } = await supabase.from('shelters').select('*');
+      if (!data || data.length === 0) {
+        Alert.alert("No Data", "No shelters found to cache.");
+        setLoading(false);
+        return;
+      }
       await AsyncStorage.setItem('safety_packet_shelters', JSON.stringify(data));
       
-      // 2. Pre-Calculate Routes to ALL Shelters (Smart Caching)
-      // This is the magic: we simulate clicking "Navigate" for every shelter silently
-      let routesSaved = 0;
-      for (const shelter of data) {
-         // Simple fetch to cache (We rely on the browser cache or manual fetch logic here)
-         // For MVP, we assume the user has clicked on important ones, or we loop fetchRoute here.
-         // NOTE: OSRM might rate limit if you do 50 at once. For MVP, we save the shelter list.
+      // 2. Pre-Cache Routes to ALL Shelters
+      const loc = locationRef.current || location;
+      if (!loc) {
+        Alert.alert("Error", "Location not available. Cannot cache routes.");
+        setLoading(false);
+        return;
       }
 
-      Alert.alert("Success", "Safety Packet & Critical Maps Downloaded!");
+      let routesSaved = 0;
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+      for (const shelter of data) {
+        try {
+          const start = `${loc.longitude},${loc.latitude}`;
+          const end = `${shelter.longitude},${shelter.latitude}`;
+          const url = `http://router.project-osrm.org/route/v1/driving/${start};${end}?overview=full&geometries=geojson&steps=true`;
+          
+          const response = await fetch(url);
+          const json = await response.json();
+          
+          if (json.routes && json.routes.length > 0) {
+            const route = json.routes[0];
+            const points = route.geometry.coordinates.map(p => ({ latitude: p[1], longitude: p[0] }));
+            const instructions = route.legs[0].steps.map(step => ({
+              instruction: step.maneuver.type + ' ' + (step.maneuver.modifier || ''),
+              name: step.name || "road",
+              distance: Math.round(step.distance) + 'm'
+            }));
+
+            const cachePayload = JSON.stringify({ coords: points, steps: instructions });
+            await AsyncStorage.setItem(`route_${shelter.id}`, cachePayload);
+            routesSaved++;
+          }
+          // Small delay to avoid OSRM rate-limiting
+          await delay(500);
+        } catch (e) {
+          console.warn(`Failed to cache route for shelter ${shelter.name}:`, e);
+        }
+      }
+
+      Alert.alert("Success", `Safety Packet Downloaded! ${routesSaved}/${data.length} routes cached.`);
     } catch (e) {
       Alert.alert("Error", "Download failed.");
     } finally {

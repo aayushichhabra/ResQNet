@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { MapPin, AlertTriangle, Bell, CloudRain, ChevronRight, Sun, Cloud, Zap } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { supabase } from '../../services/supabaseConfig';
 import { auth } from '../../services/firebaseConfig';
+
+// Helper: returns ISO timestamp for N hours ago
+const hoursAgo = (n) => new Date(Date.now() - n * 60 * 60 * 1000).toISOString();
 
 // --- UPDATED ALERT CARD ---
 // Added 'message' prop and a Text component to display it
@@ -31,6 +34,8 @@ export default function HomeScreen({ onNavigate }) {
   const [dbAlerts, setDbAlerts] = useState([]); // Manual Alerts
   const [predictiveAlerts, setPredictiveAlerts] = useState([]); // Automated Alerts
   const [refreshing, setRefreshing] = useState(false);
+  const [sosCooldown, setSosCooldown] = useState(false);
+  const sosCooldownTimer = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -38,10 +43,23 @@ export default function HomeScreen({ onNavigate }) {
     const subscription = supabase
       .channel('public:alerts')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
-        setDbAlerts((prev) => [payload.new, ...prev]);
+        // Only add if the alert is within the 4-hour window
+        const cutoff = hoursAgo(4);
+        if (payload.new.created_at >= cutoff) {
+          setDbAlerts((prev) => [payload.new, ...prev]);
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alerts' }, (payload) => {
+        setDbAlerts((prev) => prev.map(a => a.id === payload.new.id ? payload.new : a));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'alerts' }, (payload) => {
+        setDbAlerts((prev) => prev.filter(a => a.id !== payload.old.id));
       })
       .subscribe();
-    return () => supabase.removeChannel(subscription);
+    return () => {
+      supabase.removeChannel(subscription);
+      if (sosCooldownTimer.current) clearTimeout(sosCooldownTimer.current);
+    };
   }, []);
 
   const loadData = async () => {
@@ -55,7 +73,12 @@ export default function HomeScreen({ onNavigate }) {
   };
 
   const fetchRealAlerts = async () => {
-    const { data } = await supabase.from('alerts').select('*').order('created_at', { ascending: false });
+    const fourHoursAgo = hoursAgo(4);
+    const { data } = await supabase
+      .from('alerts')
+      .select('*')
+      .gte('created_at', fourHoursAgo)
+      .order('created_at', { ascending: false });
     if (data) setDbAlerts(data);
   };
 
@@ -126,6 +149,10 @@ export default function HomeScreen({ onNavigate }) {
   };
 
   const handleSOS = async () => {
+    if (sosCooldown) {
+      Alert.alert("SOS Already Sent", "Please wait before sending another SOS.");
+      return;
+    }
     Alert.alert("Confirm SOS", "Send emergency beacon?", [
       { text: "Cancel", style: "cancel" },
       { text: "SEND", onPress: async () => {
@@ -135,6 +162,9 @@ export default function HomeScreen({ onNavigate }) {
             details: 'SOS BEACON', latitude: loc.coords.latitude, longitude: loc.coords.longitude 
           });
           Alert.alert("SOS Sent", "Rescue teams notified.");
+          // 30-second cooldown to prevent spam
+          setSosCooldown(true);
+          sosCooldownTimer.current = setTimeout(() => setSosCooldown(false), 30000);
       }}
     ]);
   };
@@ -192,14 +222,22 @@ export default function HomeScreen({ onNavigate }) {
       </View>
 
       <View className="px-6 -mt-6">
-        <TouchableOpacity onPress={handleSOS} className="bg-red-600 rounded-2xl p-5 shadow-xl flex-row items-center justify-between active:bg-red-700">
+        <TouchableOpacity 
+          onPress={handleSOS} 
+          disabled={sosCooldown}
+          className={`${sosCooldown ? 'bg-gray-400' : 'bg-red-600 active:bg-red-700'} rounded-2xl p-5 shadow-xl flex-row items-center justify-between`}
+        >
           <View className="flex-row items-center gap-4">
-            <View className="w-12 h-12 bg-red-500 rounded-full items-center justify-center animate-pulse">
+            <View className={`w-12 h-12 ${sosCooldown ? 'bg-gray-500' : 'bg-red-500'} rounded-full items-center justify-center animate-pulse`}>
               <AlertTriangle size={24} color="white" />
             </View>
             <View>
-              <Text className="text-white font-bold text-lg">Emergency SOS</Text>
-              <Text className="text-red-100 text-xs">Broadcast to Rescue Teams</Text>
+              <Text className="text-white font-bold text-lg">
+                {sosCooldown ? 'SOS Sent — Wait...' : 'Emergency SOS'}
+              </Text>
+              <Text className="text-red-100 text-xs">
+                {sosCooldown ? 'Cooldown active (30s)' : 'Broadcast to Rescue Teams'}
+              </Text>
             </View>
           </View>
           <ChevronRight color="#fecaca" />

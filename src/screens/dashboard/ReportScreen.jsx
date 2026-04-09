@@ -5,13 +5,14 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-import { Camera, MapPin, X, WifiOff, CloudUpload, ChevronLeft } from 'lucide-react-native';
+import { Camera, MapPin, X, WifiOff, CloudUpload } from 'lucide-react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../services/supabaseConfig';
 import { auth } from '../../services/firebaseConfig';
+import { broadcastReport } from '../../services/meshService';
 
-export default function ReportScreen({ navigation }) {
+export default function ReportScreen() {
   // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
@@ -120,9 +121,17 @@ export default function ReportScreen({ navigation }) {
     }
   };
 
+  // --- FORM RESET HELPER ---
+  const resetForm = () => {
+    setType('Flood');
+    setDetails('');
+    setPhotoUri(null);
+  };
+
   // --- 4. UPLOAD FUNCTION ---
   const uploadReportToSupabase = async (desc, imgUri, coords, email, reportType) => {
     let evidenceUrl = null;
+    let photoFailed = false;
 
     if (imgUri) {
       try {
@@ -143,8 +152,14 @@ export default function ReportScreen({ navigation }) {
             .from('reports')
             .getPublicUrl(fileName);
           evidenceUrl = data.publicUrl;
+        } else {
+          console.warn('Photo upload error:', error.message);
+          photoFailed = true;
         }
-      } catch {}
+      } catch (e) {
+        console.warn('Photo upload failed:', e);
+        photoFailed = true;
+      }
     }
 
     const { error } = await supabase.from('reports').insert({
@@ -159,6 +174,7 @@ export default function ReportScreen({ navigation }) {
     });
 
     if (error) throw error;
+    return { photoFailed };
   };
 
   // --- 5. SUBMIT HANDLER ---
@@ -183,7 +199,7 @@ export default function ReportScreen({ navigation }) {
       if (!net.isConnected) {
         const report = {
           id: Date.now().toString(),
-          details,
+          details: details.trim(),
           type,
           photoUri,
           coords,
@@ -196,19 +212,26 @@ export default function ReportScreen({ navigation }) {
         queue.push(report);
         await AsyncStorage.setItem('offline_reports', JSON.stringify(queue));
 
-        Alert.alert('Saved Offline', 'Will auto-submit when online.');
+        // Queue for P2P Mesh Broadcast
+        await broadcastReport(report);
+
+        Alert.alert('Saved Offline', 'Will auto-submit when online or relayed via mesh.');
         setLoading(false);
         submittingRef.current = false;
-        navigation?.goBack?.();
+        resetForm();
         return;
       }
 
       // ONLINE
-      await uploadReportToSupabase(details, photoUri, coords, email, type);
-      Alert.alert('Success', 'Report submitted successfully.');
+      const result = await uploadReportToSupabase(details.trim(), photoUri, coords, email, type);
+      if (result?.photoFailed) {
+        Alert.alert('Report Sent', 'Report submitted, but the photo could not be uploaded. Text details were saved.');
+      } else {
+        Alert.alert('Success', 'Report submitted successfully.');
+      }
       setLoading(false);
       submittingRef.current = false;
-      navigation?.goBack?.();
+      resetForm();
     } catch (e) {
       Alert.alert('Saved', 'Report will retry automatically.');
       setLoading(false);
@@ -220,9 +243,6 @@ export default function ReportScreen({ navigation }) {
     <View className="flex-1 bg-[#f8fafc]">
       {/* Header */}
       <View className="pt-14 pb-4 px-6 bg-white border-b border-slate-200 flex-row items-center gap-3">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
-            <ChevronLeft size={24} color="#1e293b" />
-        </TouchableOpacity>
         <Text className="text-xl font-bold text-slate-800">Report Incident</Text>
       </View>
 

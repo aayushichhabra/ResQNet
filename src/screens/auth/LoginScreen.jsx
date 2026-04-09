@@ -17,8 +17,24 @@ export default function LoginScreen({ onLogin }) {
   const [isSignUp, setIsSignUp] = useState(false);
 
   const handleAuth = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+
+    if (!trimmedEmail || !password) {
       Alert.alert("Error", "Please enter email and password.");
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      Alert.alert("Error", "Please enter a valid email address.");
+      return;
+    }
+
+    // Minimum password length (Firebase requires at least 6)
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters.");
       return;
     }
 
@@ -27,7 +43,7 @@ export default function LoginScreen({ onLogin }) {
         Alert.alert("Error", "Passwords do not match.");
         return;
       }
-      if (!name.trim()) {
+      if (!trimmedName) {
         Alert.alert("Error", "Please enter your name.");
         return;
       }
@@ -36,11 +52,11 @@ export default function LoginScreen({ onLogin }) {
     setLoading(true);
     try {
       if (isSignUp) {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: name });
-        Alert.alert("Success", "Account created! Welcome, " + name);
+        const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+        await updateProfile(userCredential.user, { displayName: trimmedName });
+        Alert.alert("Success", "Account created! Welcome, " + trimmedName);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, trimmedEmail, password);
       }
       onLogin();
     } catch (error) {
