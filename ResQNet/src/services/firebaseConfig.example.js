@@ -1,6 +1,7 @@
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, getReactNativePersistence } from "firebase/auth";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const firebaseConfig = {
   apiKey: "abc",
@@ -9,7 +10,7 @@ const firebaseConfig = {
   storageBucket: "abc",
   messagingSenderId: "abc",
   appId: "abc",
-  measurementId: "abc",
+  measurementId: "abc"
 };
 
 let app;
@@ -22,7 +23,7 @@ if (getApps().length === 0) {
 
 // Initialize Auth with persistence
 const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });
 
 export { app, auth };

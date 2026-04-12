@@ -9,7 +9,22 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fxmwdwdkgppvhneqxfvf.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bXdkd2RrZ3BwdmhuZXF4ZnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MjMyMjgsImV4cCI6MjA4NjA4MzIyOH0.ZQGF4hZDbXpNWbBUzACHJUTtww3KzXVprAgQJf_dpu4",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyBXiPRfix9c6zMChCxSRFO8Gv0UXc1N5Vw",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "resqnet-ef7c1.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "resqnet-ef7c1",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "resqnet-ef7c1.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "787881713578",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:787881713578:web:5c6433c03b684a4fb2d5d3",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-9FNWH4JKSZ",
+        "EXPO_PUBLIC_WEATHER_API_KEY": "7409e2e44f3d9bb3e711968df1a9c462"
+      }
     },
     "production": {
       "autoIncrement": true
