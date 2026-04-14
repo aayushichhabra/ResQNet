@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQNet | Proactive Rescue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* === BASE STYLES & VARIABLES === */
+        :root {
+            --bg-deep: #020617; /* Slate 950 */
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ff3366;
+            --accent-red-glow: rgba(255, 51, 102, 0.5);
+            --accent-blue: #00f0ff;
+            --accent-blue-glow: rgba(0, 240, 255, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.7;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* === AMBIENT BACKGROUND FX === */
+        .tech-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-red { width: 500px; height: 500px; background: var(--accent-red); top: -10%; left: -10%; }
+        .orb-blue { width: 600px; height: 600px; background: #3b82f6; bottom: 20%; right: -10%; animation-delay: -5s; }
+        .orb-cyan { width: 400px; height: 400px; background: var(--accent-blue); top: 40%; left: 30%; animation-duration: 25s; opacity: 0.2; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 100px) scale(1.2); }
+        }
+
+        /* === TYPOGRAPHY === */
+        h1, h2, h3, h4 { font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; }
+        
+        .text-gradient-red {
+            background: linear-gradient(to right, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-gradient-blue {
+            background: linear-gradient(to right, #00f0ff, #0057ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* === LAYOUT === */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 10; }
+        section { padding: 7rem 0; position: relative; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        
+        /* === HERO SECTION === */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .hero-content { max-width: 1000px; animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .hero h1 { font-size: 6rem; margin-bottom: 0.5rem; letter-spacing: -3px; text-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
+        .hero h2 { font-size: 2.2rem; color: var(--text-muted); margin-bottom: 3rem; font-weight: 300; }
+        
+        .tag-premium {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-highlight);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .tag-premium::before {
+            content: ''; display: inline-block; width: 8px; height: 8px; background: var(--accent-red); border-radius: 50%; margin-right: 10px; box-shadow: 0 0 10px var(--accent-red);
+        }
+
+        /* === SEXY GLASS CARDS === */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem; }
+        
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 24px;
+            padding: 3rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transition: all 0.6s;
+        }
+        .glass-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.05);
+        }
+        .glass-card:hover::before { left: 200%; }
+
+        .glass-card.glow-red:hover { box-shadow: 0 20px 50px var(--accent-red-glow); border-color: var(--accent-red); }
+        .glass-card.glow-blue:hover { box-shadow: 0 20px 50px var(--accent-blue-glow); border-color: var(--accent-blue); }
+
+        /* === IMAGES === */
+        .img-wrapper {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-highlight);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .img-wrapper::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); pointer-events: none; border-radius: 20px;
+        }
+        .img-wrapper img {
+            width: 100%; height: auto; display: block;
+            transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .img-wrapper:hover img { transform: scale(1.05); }
+
+        /* === CUSTOM LISTS === */
+        ul.custom-list { list-style: none; margin-bottom: 1.5rem; }
+        ul.custom-list li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+        ul.custom-list li::before {
+            content: '✦';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px var(--accent-blue);
+        }
+
+        /* === TEAM GRID === */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .team-badge {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        .team-badge:hover { background: rgba(255,255,255,0.08); transform: translateY(-5px); border-color: var(--accent-blue); }
+        .team-badge h4 { color: var(--text-main); font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .team-badge span { color: var(--accent-blue); font-size: 0.85rem; font-family: monospace; letter-spacing: 1px; }
+
+        /* === HIGHLIGHT BOX === */
+        .highlight-box {
+            background: linear-gradient(90deg, rgba(255, 51, 102, 0.1) 0%, transparent 100%);
+            border-left: 4px solid var(--accent-red);
+            padding: 2rem;
+            border-radius: 0 16px 16px 0;
+            margin: 3rem 0;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3.5rem; }
+            .grid-2 { grid-template-columns: 1fr; gap: 2rem; }
+            .glass-card { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tech-grid"></div>
+    <div class="ambient-orb orb-red"></div>
+    <div class="ambient-orb orb-blue"></div>
+    <div class="ambient-orb orb-cyan"></div>
+
+    <section class="hero">
+        <div class="container hero-content">
+            <div class="tag-premium">PBL-IV Capstone Project</div>
+            <h1>ResQNet <span style="font-size: 4rem;">🚁</span></h1>
+            <h2>Turning Logistical Paralysis into <span class="text-gradient-red">Proactive Rescue</span></h2>
+            
+            <div style="margin-top: 5rem; text-align: left;">
+                <p style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.5rem; opacity: 0.6;">Presented by the Team</p>
+                <div class="team-grid">
+                    <div class="team-badge"><h4>Smarya Narang</h4> <span>23FE10CSE00374</span></div>
+                    <div class="team-badge"><h4>Navya Khanna</h4> <span>23FE10CSE00062</span></div>
+                    <div class="team-badge"><h4>Rhea Ahuja</h4> <span>23FE10CSE00505</span></div>
+                    <div class="team-badge"><h4>Ashi Bansal</h4> <span>23FE10CSE00394</span></div>
+                    <div class="team-badge"><h4>Priyal Kansal</h4> <span>23FE10CSE00039</span></div>
+                    <div class="team-badge"><h4>Aayushi Chhabra</h4> <span>23FE10CSE00369</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 4rem; text-align: center;">
+            <h2><span class="text-gradient-blue">Introduction</span> & Risks</h2>
+        </div>
+        <div class="grid-2">
+            <div class="glass-card glow-blue">
+                <ul class="custom-list">
+                    <li>India faces frequent disasters such as floods, earthquakes, landslides and cyclones.</li>
+                    <li>During emergencies, the Golden Hour (first 60 minutes) is crucial for saving lives.</li>
+                    <li>However, communication breakdown causes delayed rescue operations.</li>
+                    <li>ResQNet provides an offline-first disaster response platform for citizens, NGOs and government.</li>
+                </ul>
+            </div>
+            <div class="glass-card glow-red">
+                <ul class="custom-list">
+                    <li>India is the 3rd most disaster-prone country globally.</li>
+                    <li>Over ₹4.3 Trillion economic loss occurred between 2014–2024.</li>
+                </ul>
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <p style="color: var(--text-main); font-weight: 600; margin-bottom: 1rem;">Major failures happen due to:</p>
+                    <ul class="custom-list" style="margin-bottom: 1.5rem;">
+                        <li style="color: #ff8a00;">power grid failure</li>
+                        <li style="color: #ff8a00;">cellular collapse</li>
+                        <li style="color: #ff8a00;">no real-time victim tracking</li>
+                    </ul>
+                    <p style="color: var(--accent-red); font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">ResQNet ensures rescue coordination even during network blackout.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 4rem;">
+            <h2>Literature <span class="text-gradient-blue">Review</span></h2>
+            <p style="color: var(--text-muted); font-size: 1.2rem;">Existing Disaster Management Systems</p>
+        </div>
+        <div class="grid-3">
+            <div class="glass-card">
+                <h3 style="color: var(--text-main); margin-bottom: 1.5rem;">Geological Survey of India — Bhukamp Tool</h3>
+                <ul class="custom-list">
+                    <li>Earthquake hazard mapping and seismic zone analysis</li>
+                    <li>Used for risk prediction and planning infrastructure safety</li>
+                    <li>Not designed for direct citizen rescue communication</li>
+                </ul>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: var(--text-main); margin-bottom: 1.5rem;">National Disaster Management Authority (NDMA)</h3>
+                <ul class="custom-list">
+                    <li>Government-led disaster monitoring and alert dissemination platforms</li>
+                    <li>Provide cyclone, flood, earthquake and heatwave warnings</li>
+                    <li>Use SMS alerts, web dashboards, and official advisories</li>
+                </ul>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: var(--text-main); margin-bottom: 1.5rem;">Google Crisis Response</h3>
+                <ul class="custom-list">
+                    <li>Provides real-time disaster maps and emergency information</li>
+                    <li>Integrates evacuation routes, shelters, and safe locations</li>
+                    <li>Used globally during earthquakes, wildfires, floods, pandemics</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h3 style="margin-bottom: 1rem; color: var(--text-main);">Limitations Identified in Existing Systems</h3>
+            <p style="color: var(--accent-red); font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">1. Internet Dependency | 2. One-Way Communication | 3. Lack of Real-Time Ground Feedback</p>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 4rem;">
+            <h2>Research <span class="text-gradient-red">Gap</span></h2>
+        </div>
+        <div class="grid-2">
+            <div>
+                <h3 style="margin-bottom: 1.5rem;">Focus of Current Solutions</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Most existing disaster platforms mainly support:</p>
+                <ul class="custom-list">
+                    <li>Disaster prediction → early warnings (cyclones, earthquakes, floods)</li>
+                    <li>Post-relief reporting → damage assessment & official updates</li>
+                </ul>
+                <div style="background: rgba(255, 51, 102, 0.1); padding: 1.5rem; border-radius: 12px; margin: 2rem 0; border: 1px solid rgba(255, 51, 102, 0.3);">
+                    <h4 style="color: var(--accent-red); font-size: 1.2rem;">No solution works efficiently in the blackout phase.</h4>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Most systems lack:</p>
+                <ul class="custom-list">
+                    <li>SOS clustering</li>
+                    <li>offline reporting</li>
+                    <li>real-time heatmaps</li>
+                    <li>last-mile victim tracking</li>
+                </ul>
+            </div>
+            <div class="glass-card glow-blue">
+                <h3 style="margin-bottom: 1.5rem;">Key Findings from Study</h3>
+                <ul class="custom-list">
+                    <li>Traditional systems depend on high-bandwidth networks.</li>
+                    <li>Communication becomes unreliable during the first few hours.</li>
+                    <li>Victims cannot share location → rescuers lack visibility.</li>
+                </ul>
+                <p style="margin-top: 2rem; margin-bottom: 1rem; color: var(--accent-blue); font-weight: 600;">Need for a platform that enables:</p>
+                <ul class="custom-list">
+                    <li>bilateral crowdsourcing</li>
+                    <li>offline-first reporting</li>
+                    <li>centralized dashboard visibility</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="glass-card glow-red" style="margin-top: 4rem; text-align: center; padding: 4rem 2rem;">
+            <div class="tag-premium" style="margin-bottom: 1rem;">PROBLEM STATEMENT</div>
+            <p style="font-size: 1.5rem; font-weight: 300; max-width: 900px; margin: 0 auto; line-height: 1.6;">During disasters, internet and cellular failures create an information blackout, preventing citizens from sending SOS signals and stopping NGOs/government from locating victims during the Golden Hour.</p>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 4rem; text-align: center;">
+            <h2>CORE <span class="text-gradient-blue">OBJECTIVES</span></h2>
+        </div>
+        <div class="grid-2">
+            <div class="glass-card">
+                <h3 class="text-gradient-red" style="margin-bottom: 1rem; font-size: 1.5rem;">REAL TIME CLUSTERING</h3>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">Provide real-time clustering + heatmaps for better rescue prioritization.</p>
+            </div>
+            <div class="glass-card">
+                <h3 class="text-gradient-blue" style="margin-bottom: 1rem; font-size: 1.5rem;">AI PREDICTION</h3>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">Predict required resources (ambulances, rescue teams, fire vans) using AI.</p>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: white; margin-bottom: 1rem; font-size: 1.5rem;">OFFLINE FIRST</h3>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">Build an offline-first SOS reporting system that works without 4G/5G.</p>
+            </div>
+            <div class="glass-card">
+                <h3 style="color: white; margin-bottom: 1rem; font-size: 1.5rem;">UNIFIED PLATFORM</h3>
+                <p style="color: var(--text-muted); font-size: 1.1rem;">Create a unified platform connecting Citizens, NGOs and Government.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 5rem; text-align: center;">
+            <h2>PROPOSED <span class="text-gradient-red">METHODOLOGY</span> & RESULTS</h2>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 8rem; align-items: center;">
+            <div class="img-wrapper">
+                <img src="govt-dashboard.png" alt="Govt Dashboard">
+            </div>
+            <div>
+                <span style="color: var(--text-muted); font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Step 1: Government Monitoring</span>
+                <h2 style="font-size: 2.5rem; margin: 0.5rem 0 1.5rem 0;">GOVERNMENT DASHBOARD</h2>
+                <p style="font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 2rem;"><strong>Purpose:</strong> Disaster Monitoring & Strategic Control</p>
+                <p style="color: white; font-weight: 600; margin-bottom: 1rem;">Features:</p>
+                <ul class="custom-list">
+                    <li>Broadcast emergency alerts to citizens</li>
+                    <li>Coordinate with rescue agencies</li>
+                    <li>Trends & Analytics: Disaster frequency patterns, Affected population trends</li>
+                    <li>Resource Allocation View</li>
+                </ul>
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Key Idea:</strong> Authorities don’t just warn people, they manage the entire rescue strategy.</p>
+                    <p style="color: var(--accent-blue); font-weight: bold;">➡ Better resource utilization<br>➡ Reduced rescue delays</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 8rem; align-items: start; direction: rtl;">
+            <div style="direction: ltr;">
+                <div class="img-wrapper">
+                    <img src="citizen-app.png" alt="Citizen App">
+                </div>
+                <div class="img-wrapper">
+                    <img src="apk-deployment.png" alt="Deployed Android APK">
+                </div>
+            </div>
+            <div style="direction: ltr;">
+                <span style="color: var(--text-muted); font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Step 2: User SOS Reporting</span>
+                <h2 style="font-size: 2.5rem; margin: 0.5rem 0 1.5rem 0;">RESQNET APP</h2>
+                <p style="font-size: 1.2rem; color: var(--accent-red); margin-bottom: 2rem;"><strong>Purpose:</strong> Instant Distress Communication</p>
+                <p style="color: white; font-weight: 600; margin-bottom: 1rem;">Features & Live Deployment (Deployed APK):</p>
+                <ul class="custom-list">
+                    <li>One-tap Emergency SOS (no login)</li>
+                    <li>Auto GPS location sharing</li>
+                    <li>Incident selection (flood / fire / landslide)</li>
+                    <li>Works in offline blackout mode</li>
+                    <li>Stores data → sends when signal returns</li>
+                </ul>
+                <p style="color: var(--text-muted); margin: 1.5rem 0 1rem 0;"><strong>App Successfully Deployed:</strong> ResQNet is now a fully functional Android APK distributed for real-world use.</p>
+                <ul class="custom-list">
+                    <li><strong>Home Screen Features:</strong> Live GPS coordinates displayed on launch, Real-time weather + temperature from device location, Emergency SOS button — broadcasts instantly to rescue teams, Live Updates panel for active risks in your area.</li>
+                    <li><strong>SOS Beacon System:</strong> One-tap SOS sends an emergency beacon directly to the NGO dashboard. Works from the lock screen — no login required. Confirmation shown: 'Emergency beacon broadcasted successfully to Rescue Teams.'</li>
+                    <li><strong>Widget on Home Screen:</strong> SEND SOS widget available directly on Android home screen for fastest access.</li>
+                </ul>
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(255, 51, 102, 0.05); border-radius: 12px; border: 1px solid rgba(255, 51, 102, 0.2);">
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Key Idea:</strong> Victim should never be digitally invisible.</p>
+                    <p style="color: var(--accent-red); font-weight: bold;">➡ Help request sent even without internet</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2" style="align-items: start;">
+            <div>
+                <div class="img-wrapper">
+                    <img src="ngo-dashboard.png" alt="NGO Dashboard">
+                </div>
+                <div class="img-wrapper">
+                    <img src="gps-routing.png" alt="GPS Turn-by-Turn Routing">
+                </div>
+                <div class="img-wrapper">
+                    <img src="audit-log.png" alt="Incident History and Audit Log">
+                </div>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Step 3: Rescue Procedure</span>
+                <h2 style="font-size: 2.5rem; margin: 0.5rem 0 1.5rem 0;">NGO DASHBOARD</h2>
+                <p style="font-size: 1.2rem; color: white; margin-bottom: 2rem;"><strong>Purpose:</strong> Rescue Team Decision Center</p>
+                <p style="color: white; font-weight: 600; margin-bottom: 1rem;">Features (GPS Routing + History & Audit Log):</p>
+                <ul class="custom-list">
+                    <li>Receives live SOS signals</li>
+                    <li>Groups nearby victims (SOS clustering)</li>
+                    <li>Shows danger heatmap</li>
+                    <li>Suggests rescue action (boat / ambulance / team)</li>
+                </ul>
+                <ul class="custom-list">
+                    <li><strong>Turn-by-Turn GPS Navigation:</strong> Clicking any incident on the map shows the exact route from rescue base to victim. Live estimated time: e.g. 25.8 km — 23 min via Ajmer Road / NH48. Step-by-step directions help field teams navigate blocked or unfamiliar roads.</li>
+                    <li><strong>Incident History & Audit Log:</strong> Full timeline of all incidents — Completed, Dispatched, or Pending. Each entry shows disaster type (Flood, SOS, Fire, Landslide) and message. Downloadable Audit Log (CSV) for post-disaster review and compliance.</li>
+                    <li><strong>Live Resource Counter:</strong> Dashboard header shows live count of Ambulances, Fire Units & Volunteers. AI Live Predictor recalculates resource needs as new reports come in.</li>
+                    <li><strong>Resolve / Dispatch Actions:</strong> Each incident card has Resolve (close) or Dispatch (send team) buttons. Resolved incidents automatically move to History.</li>
+                </ul>
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Key Idea:</strong> Not just seeing disaster, knowing who needs help first.</p>
+                    <p style="color: white; font-weight: bold;">➡ Faster and smarter rescue deployment</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="glass-card glow-blue" style="padding: 4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+                <h2 class="text-gradient-blue" style="font-size: 2.5rem; max-width: 500px;">P2P MESH NETWORKING <br><span style="font-size: 1.2rem; color: white; background: rgba(0, 240, 255, 0.2); padding: 0.3rem 1rem; border-radius: 50px; vertical-align: middle; margin-left: 1rem;">NEW FEATURE</span></h2>
+                <div style="text-align: right;">
+                    <p style="color: var(--accent-blue); font-weight: 600; font-family: monospace; font-size: 1.1rem;">● Online: Active & scanning for peers</p>
+                    <p style="color: var(--text-muted); font-family: monospace; font-size: 1.1rem;">○ Offline: Broadcasting SOS report to mesh</p>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">What is Mesh Networking?</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">Devices communicate directly with each other using Bluetooth & WiFi-Direct — no internet required.</p>
+                    
+                    <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">How ResQNet Uses It</h3>
+                    <ul class="custom-list">
+                        <li>When offline, the app broadcasts SOS reports to nearby ResQNet peers.</li>
+                        <li>Each peer relays the signal further, creating a chain of communication.</li>
+                        <li>Reports hop from device to device until they reach an area with connectivity.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="img-wrapper" style="margin-bottom: 2rem;">
+                        <img src="mesh-diagram.png" alt="Mesh Networking">
+                    </div>
+                    <h3 style="margin-bottom: 1rem;">Key Stats Shown</h3>
+                    <ul class="custom-list">
+                        <li><strong>Nearby Peers:</strong> real-time count of connected devices in range.</li>
+                        <li><strong>Broadcasting:</strong> number of reports being actively relayed.</li>
+                        <li><strong>Received:</strong> reports received from neighbouring peers.</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top: 3rem; text-align: center; background: rgba(0, 240, 255, 0.1); padding: 2rem; border-radius: 16px; border: 1px dashed var(--accent-blue);">
+                <p style="color: var(--text-main); font-size: 1.3rem; font-weight: 600;">Impact: <span style="color: var(--accent-blue);">Victims can call for help even in a total network blackout — the mesh carries the signal.</span></p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div style="margin-bottom: 4rem; text-align: center;">
+            <h2>OUTCOMES & <span class="text-gradient-red">FUTURE STRATEGY</span></h2>
+        </div>
+        <div class="grid-2">
+            <div class="glass-card">
+                <h3 style="margin-bottom: 2rem; font-size: 1.5rem; color: white;">Achievements Till Current Semester</h3>
+                <ul class="custom-list">
+                    <li>NGO & Government web dashboards completed</li>
+                    <li>Citizen App deployed as Android APK</li>
+                    <li>P2P Bluetooth/WiFi-Direct Mesh Networking implemented</li>
+                    <li>Live heatmap with GPS turn-by-turn routing to incidents</li>
+                    <li>NGO login system with database-registered access</li>
+                    <li>Incident history & downloadable CSV audit log</li>
+                    <li>Outreach sent to Indian Red Cross, Smile Foundation & Rapid Response India</li>
+                </ul>
+            </div>
+            
+            <div class="glass-card glow-red">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem; color: white;">NGO Outreach & Partnerships</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;"><strong>Real-World NGO Partnerships Initiated:</strong> We have reached out to leading NGOs and humanitarian organisations to pilot ResQNet.</p>
+                
+                <p style="color: white; font-weight: 600; margin-bottom: 0.5rem;">Organisations Contacted:</p>
+                <ul class="custom-list">
+                    <li>Indian Red Cross (ircs@indianredcross.org) — disaster relief & first response.</li>
+                    <li>Smile Foundation India (info@smilefoundationindia.org) — community welfare.</li>
+                    <li>Rapid Response India (info@rapidresponse.org.in) — emergency coordination.</li>
+                </ul>
+
+                <p style="color: white; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1.5rem;">What We Proposed:</p>
+                <ul class="custom-list">
+                    <li>Unified distress intake from app — no call missed.</li>
+                    <li>Live situational map with Live Track for pending emergencies.</li>
+                    <li>Smart resource forecasting: ambulances, fire units & volunteers.</li>
+                    <li>Complete audit trail from Pending to Resolved.</li>
+                </ul>
+
+                <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 0.5rem; margin-top: 1.5rem;">Next Steps:</p>
+                <ul class="custom-list">
+                    <li>Schedule 15-minute demo calls with partner organisations.</li>
+                    <li>NGO login system — registered NGOs log in directly via the dashboard.</li>
+                    <li>Expand mesh network pilot to disaster-prone districts.</li>
+                </ul>
+                <div class="img-wrapper" style="margin-top: 2rem;">
+                    <img src="email-outreach.png" alt="Outreach Emails">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="border-bottom: none; padding-bottom: 4rem;">
+        <div class="glass-card" style="padding: 3rem;">
+            <h2 style="margin-bottom: 2rem; font-size: 2rem;">References</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">NCRB – Accidental Deaths & Suicides in India (ADSI Report 2022)</p>
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">UN Office for Disaster Risk Reduction (UNDRR)</p>
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">World Meteorological Organization (WMO) Atlas of Mortality & Economic Losses (1970–2021)</p>
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">NDMA / NDEM Disaster Response Systems</p>
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">OpenStreetMap Documentation</p>
+                <p style="color: var(--text-muted); font-size: 0.95rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px;">PostgreSQL + PostGIS Official Docs</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container" style="text-align: center; padding: 4rem 0; border-top: 1px solid rgba(255,255,255,0.05);">
+            <h2 style="font-size: 4rem; letter-spacing: -2px;">THANK YOU <span style="color: var(--accent-red);">!</span></h2>
+            <p style="color: var(--text-muted); margin-top: 1rem; font-size: 1.2rem; letter-spacing: 4px; text-transform: uppercase;">PBL-IV CAPSTONE PROJECT</p>
+        </div>
+    </footer>
+
+</body>
+</html>
